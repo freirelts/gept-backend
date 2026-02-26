@@ -1,289 +1,203 @@
 # GEPT Backend
 
-API REST para gestão de projetos sociais, trabalhadores, famílias e pessoas vinculadas.
-
-## Sumário
-
-1. [Visão geral](#visão-geral)
-2. [Tecnologias](#tecnologias)
-3. [Estrutura do projeto](#estrutura-do-projeto)
-4. [Pré-requisitos](#pré-requisitos)
-5. [Setup rápido](#setup-rápido)
-6. [Variáveis de ambiente](#variáveis-de-ambiente)
-7. [Scripts disponíveis](#scripts-disponíveis)
-8. [Guia da API](#guia-da-api)
-9. [Diagrama ERD](#diagrama-erd)
-10. [Autor](#autor)
+Backend da plataforma GEPT reescrito em **NestJS**, com arquitetura em camadas, autenticação JWT e persistência em PostgreSQL via TypeORM.
 
 ## Visão geral
 
-- Padrão arquitetural: Clean Architecture (camadas `domain`, `data`, `infra`, `presentation`, `main`)
-- Banco de dados relacional com TypeORM + migrations
-- Autenticação via JWT
-- Módulos de endpoint: `auth` (login), `dashboard`, `worker`, `project` e `family`
+- API REST para gestão de trabalhadores, projetos, famílias e dashboard.
+- Estrutura modular por contexto (`authentication`, `worker`, `project`, `family`, `dashboard`).
+- Separação de responsabilidades em camadas: `@domain`, `@data` e `@infra`.
+- Validações com `class-validator` + `ValidationPipe` global.
+- Migrations versionadas para evolução do banco.
 
-## Tecnologias
+## Stack
 
-- Node.js 16+
-- TypeScript 3.9
-- Express 4
+- NestJS 10
+- TypeScript
 - TypeORM 0.3
 - PostgreSQL
-- Yup (validação)
-- JWT (`jsonwebtoken`)
-- Docker / Docker Compose (opcional para banco)
+- JSON Web Token (`jsonwebtoken`)
+- `class-validator` / `class-transformer`
+- Jest
 
-## Estrutura do projeto
+## Arquitetura
 
 ```text
 src/
-  config/         # Configurações de app, segurança e banco
-  data/           # Use cases, validações e erros
-  domain/         # Regras de domínio, contratos e modelos
-  infra/          # Implementações (TypeORM, entidades, repositórios, migrations)
-  loaders/        # Bootstrap da aplicação (dotenv, app, db, logger)
-  main/           # Factories
-  presentation/   # Controllers e middlewares HTTP
-  routes.ts       # Rotas da API
-  server.ts       # Entry point
+  @domain/             # Entidades, contratos de repositório e contratos de use case
+  @data/               # Implementações dos casos de uso
+  @infra/              # Repositórios TypeORM, DTOs, middleware JWT, serviços de criptografia/token
+  authentication/      # Módulo de login
+  worker/              # Módulo de trabalhadores
+  project/             # Módulo de projetos
+  family/              # Módulo de famílias
+  dashboard/           # Módulo de contadores
+  app.module.ts
+  main.ts
 ```
 
 ## Pré-requisitos
 
-- Node.js `16.x` (recomendado)
-- npm `6+`
+- Node.js `16+` (pipeline atual usa Node 16)
+- npm
 - PostgreSQL `13+` (local ou via Docker)
 
-> Observação: o build com Webpack 4 pode falhar em Node 17+ (`ERR_OSSL_EVP_UNSUPPORTED`). Use Node 16 ou exporte `NODE_OPTIONS=--openssl-legacy-provider` antes de `npm run build`.
+## Configuração do ambiente
 
-## Setup rápido
-
-### 1) Clonar e instalar dependências
+1. Instale dependências:
 
 ```bash
-git clone <url-do-repositorio>
-cd gept-backend
 npm install
 ```
 
-### 2) Configurar ambiente
+2. Crie o arquivo de ambiente:
 
 ```bash
 cp .env.example .env
 ```
 
-### 3) Subir PostgreSQL com Docker (opcional)
+3. Configure as variáveis:
 
-Este `docker-compose.yml` sobe apenas o banco (`postgres-db`).
+| Variável | Descrição | Exemplo |
+| --- | --- | --- |
+| `PORT` | Porta da API | `3000` |
+| `DB_HOST` | Host do PostgreSQL | `localhost` |
+| `DB_PORT` | Porta do PostgreSQL | `5432` |
+| `DB_NAME` | Nome do banco | `gept_db` |
+| `DB_USER` | Usuário do banco | `postgres` |
+| `DB_PASSWORD` | Senha do banco | `postgres` |
+| `JWT_SECRET` | Chave de assinatura do token JWT | `sua-chave-segura` |
 
-```bash
-docker compose up -d postgresdb
-```
+## Banco de dados (opcional com Docker)
 
-### 4) Executar migrations
-
-```bash
-npm run migration:run
-```
-
-### 5) Rodar API em desenvolvimento
-
-```bash
-npm run dev
-```
-
-API disponível em `http://localhost:3000/api`.
-
-### 6) Validar saúde do serviço
+O `docker-compose.yml` sobe apenas o PostgreSQL:
 
 ```bash
-curl http://localhost:3000/api/health
+docker compose up -d
 ```
 
-## Variáveis de ambiente
+## Migrations
 
-| Variável      | Padrão      | Descrição                       |
-|---------------|-------------|---------------------------------|
-| `PORT`        | `3000`      | Porta da API                    |
-| `DB_HOST`     | `localhost` | Host do PostgreSQL              |
-| `DB_PORT`     | `5432`      | Porta do PostgreSQL             |
-| `DB_NAME`     | `gept_db`   | Nome do banco                   |
-| `DB_USER`     | `postgres`  | Usuário do banco                |
-| `DB_PASSWORD` | `postgres`  | Senha do banco                  |
-| `JWT_SECRET`  | `123`       | Segredo de assinatura do JWT    |
+Após configurar o banco, execute:
 
-## Scripts disponíveis
-
-| Script                  | Descrição |
-|-------------------------|-----------|
-| `npm run dev`           | Executa a API com `ts-node-dev` |
-| `npm run build`         | Compila para `dist/` (Babel + Webpack) |
-| `npm start`             | Inicia a API em modo produção (`dist/server.js`) |
-| `npm run migration:create` | Cria uma nova migration |
-| `npm run migration:run` | Aplica migrations pendentes |
-| `npm run migration:undo` | Reverte a última migration |
-
-## Guia da API
-
-### Base URL
-
-`http://localhost:3000/api`
-
-### Formato de resposta
-
-```json
-{
-  "status": "OK",
-  "data": {},
-  "message": "opcional",
-  "errors": ["opcional"]
-}
+```bash
+npx typeorm-ts-node-commonjs migration:run -d ./src/@infra/typeorm/database.source.ts
 ```
 
-### Autenticação
+Para desfazer a última migration:
 
-1. Faça login em `POST /login`
-2. Use o token retornado no header:
+```bash
+npx typeorm-ts-node-commonjs migration:revert -d ./src/@infra/typeorm/database.source.ts
+```
+
+## Executando a aplicação
+
+Desenvolvimento:
+
+```bash
+npm run start:dev
+```
+
+Produção local:
+
+```bash
+npm run build
+npm run start:prod
+```
+
+Base URL local: `http://localhost:3000/api`
+
+## Scripts úteis
+
+| Script | Descrição |
+| --- | --- |
+| `npm run start` | Inicia aplicação |
+| `npm run start:dev` | Inicia com watch |
+| `npm run build` | Gera build em `dist/` |
+| `npm run lint` | Executa ESLint |
+| `npm run format` | Formata com Prettier |
+| `npm run test` | Testes unitários |
+| `npm run test:e2e` | Testes end-to-end |
+| `npm run test:cov` | Cobertura de testes |
+
+## Autenticação
+
+- `POST /api/login` é a única rota pública.
+- As demais rotas exigem header:
 
 ```http
 Authorization: Bearer <token>
 ```
 
-### Paginação
+Exemplo de login:
 
-As rotas de listagem (`GET /worker`, `GET /project`, `GET /family`) leem paginação via headers:
-
-- `page` (padrão `1`)
-- `perpage` (padrão `10`)
-
-### Endpoints
-
-| Método | Rota | Auth | Descrição |
-|--------|------|------|-----------|
-| `GET` | `/health` | Não | Healthcheck |
-| `POST` | `/login` | Não | Login e geração de token |
-| `GET` | `/dashboard` | Sim | Totais de famílias, trabalhadores e projetos |
-| `POST` | `/worker` | Sim | Criar trabalhador |
-| `GET` | `/worker` | Sim | Listar trabalhadores |
-| `GET` | `/worker/:id` | Sim | Buscar trabalhador por ID |
-| `PATCH` | `/worker/:id` | Sim | Atualizar trabalhador |
-| `DELETE` | `/worker/:id` | Sim | Remover trabalhador |
-| `POST` | `/project` | Sim | Criar projeto |
-| `GET` | `/project` | Sim | Listar projetos |
-| `GET` | `/project/:id` | Sim | Buscar projeto por ID |
-| `PATCH` | `/project/:id` | Sim | Atualizar projeto |
-| `DELETE` | `/project/:id` | Sim | Remover projeto |
-| `POST` | `/family` | Sim | Criar família |
-| `GET` | `/family` | Sim | Listar famílias |
-| `GET` | `/family/:id` | Sim | Buscar família por ID |
-| `PATCH` | `/family/:id` | Sim | Atualizar família |
-| `DELETE` | `/family/:id` | Sim | Remover família |
-
-### Exemplos de payload
-
-#### Login
-
-```json
-{
-  "email": "admin@dominio.com",
-  "password": "123456"
-}
+```bash
+curl -X POST http://localhost:3000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"usuario@email.com","password":"senha"}'
 ```
 
-#### Criar projeto
+## Endpoints
 
-```json
-{
-  "name": "Projeto Acolher",
-  "description": "Atendimento social semanal",
-  "daysOfWork": ["monday", "wednesday", "friday"]
-}
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `GET` | `/api/health` | Health check da aplicação |
+| `POST` | `/api/login` | Autenticação e geração de token |
+| `GET` | `/api/dashboard` | Contadores de famílias, trabalhadores e projetos |
+| `POST` | `/api/worker` | Cria trabalhador |
+| `GET` | `/api/worker` | Lista trabalhadores (paginação via headers) |
+| `GET` | `/api/worker/:id` | Busca trabalhador por id |
+| `PATCH` | `/api/worker/:id` | Atualiza trabalhador |
+| `DELETE` | `/api/worker/:id` | Remove trabalhador |
+| `POST` | `/api/project` | Cria projeto |
+| `GET` | `/api/project` | Lista projetos (paginação via headers) |
+| `GET` | `/api/project/:id` | Busca projeto por id |
+| `PATCH` | `/api/project/:id` | Atualiza projeto |
+| `DELETE` | `/api/project/:id` | Remove projeto |
+| `POST` | `/api/family` | Cria família |
+| `GET` | `/api/family` | Lista famílias (paginação via headers) |
+| `GET` | `/api/family/:id` | Busca família por id |
+| `PATCH` | `/api/family/:id` | Atualiza família |
+| `DELETE` | `/api/family/:id` | Remove família |
+
+Paginação nas rotas de listagem:
+
+```http
+page: 1
+perPage: 10
 ```
 
-#### Criar trabalhador
+## Contratos importantes
 
-```json
-{
-  "name": "Maria Silva",
-  "email": "maria@email.com",
-  "password": "123456",
-  "birthdate": "1990-01-15T00:00:00.000Z",
-  "position": "worker",
-  "accessLevel": "maintainer",
-  "phone": "88999999999",
-  "isWhatsApp": true,
-  "street": "Rua A",
-  "number": "123",
-  "neighborhood": "Centro",
-  "city": "Juazeiro do Norte",
-  "postalCode": "63000000",
-  "projects": []
-}
-```
+Valores aceitos em `CreateWorkerDto`:
 
-#### Criar família
+- `accessLevel`: `administrator`, `maintainer`, `visitor`
+- `position`: `president`, `vice-president`, `secretary`, `treasurer`, `worker`
 
-```json
-{
-  "street": "Rua B",
-  "number": "45",
-  "neighborhood": "Bairro C",
-  "complement": "Casa 2",
-  "isRented": true,
-  "rentPrice": 750,
-  "projects": [],
-  "persons": [
-    {
-      "name": "João Souza",
-      "email": "joao@email.com",
-      "isOwner": true,
-      "document": "00000000000",
-      "kin": "Responsável",
-      "occupation": "Autônomo",
-      "wage": 1200,
-      "wageSources": "Serviços",
-      "nis": "12345678900",
-      "schooling": "Ensino Médio",
-      "birthdate": "1985-03-20T00:00:00.000Z",
-      "phone": "88988888888",
-      "isWhatsApp": true,
-      "phone2": "88977777777",
-      "isWhatsApp2": false
-    }
-  ]
-}
-```
+Valores aceitos em `CreateProjectDto.daysOfWork`:
 
-### Observações importantes
+- `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`
 
-- `projects` deve ser enviado como array em `POST /worker` e `POST /family` (use `[]` quando não houver vínculo).
-- Em `PATCH /worker/:id` e `PATCH /family/:id`, envie o estado completo de `projects` para evitar perda de vínculo.
-- A migration cria um usuário padrão com email `geptadmin@email.com`, mas a senha não é exposta no projeto.
-- A configuração do Jest existe, mas a pasta `tests/` não está no repositório atualmente.
+## Boas práticas adotadas
 
-#### Definir senha local para o usuário seed (opcional)
+- Arquitetura orientada a casos de uso.
+- Repositórios desacoplados por contratos de domínio.
+- Criptografia de senha com `bcrypt`.
+- JWT com expiração.
+- Versionamento de esquema com migrations.
+- Organização por módulos de negócio no NestJS.
 
-Para facilitar desenvolvimento local, você pode definir uma senha conhecida (`123456`) no usuário seed:
+## Melhorias recomendadas
 
-```sql
-UPDATE worker
-SET password = '$2b$10$.cEI6r/QEPcTcEwiGvktGuppKo56TtzGIo6BQZZaaJV8MkeV8O6KS'
-WHERE email = 'geptadmin@email.com';
-```
-
-Após isso, faça login com:
-
-```json
-{
-  "email": "geptadmin@email.com",
-  "password": "123456"
-}
-```
+- Substituir middleware de autenticação por `Guard` NestJS.
+- Padronizar validações com decorators em todos os DTOs.
+- Corrigir scripts de migration no `package.json` para usar `database.source.ts`.
+- Atualizar Dockerfile para `dist/main.js` (estrutura Nest atual).
 
 ## Diagrama ERD
 
-<img src="./.github/images/GEPT - ERD.png" alt="Diagrama de entidade e relacionamento (GEPT)" />
+![GEPT ERD](./.github/images/GEPT%20-%20ERD.png)
 
-## Autor
+## Contribuidores
 
 [Lucas Tavares](https://www.linkedin.com/in/lucas-tavares-a25323116/)

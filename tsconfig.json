@@ -1,40 +1,35 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
     "module": "commonjs",
-    "lib": [
-      "ES6"
-    ],
-    "outDir": "./dist",
-    "rootDirs": [
-      "./src",
-      "./tests"
-    ],
+    "declaration": true,
     "removeComments": true,
-    "strict": true,
-    "typeRoots": [
-      "./types",
-      "./node_modules/@types"
-    ],
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@/tests/*": [
-        "./tests/*"
+      "@config/*": [
+        "./src/@config/*"
       ],
-      "@/*": [
-        "./src/*"
+      "@data/*": [
+        "./src/@data/*"
+      ],
+      "@domain/*": [
+        "./src/@domain/*"
+      ],
+      "@infra/*": [
+        "./src/@infra/*"
       ]
-    },
-    "suppressImplicitAnyIndexErrors": true
-  },
-  "include": [
-    "src",
-    "tests"
-  ]
+    }
+  }
 }
