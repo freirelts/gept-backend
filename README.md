@@ -1,73 +1,103 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# GEPT Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST para gestão de projetos sociais, trabalhadores, famílias e pessoas vinculadas.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Sumário
 
-## Description
+1. [Visão geral](#visão-geral)
+2. [Tecnologias](#tecnologias)
+3. [Estrutura do projeto](#estrutura-do-projeto)
+4. [Pré-requisitos](#pré-requisitos)
+5. [Setup rápido](#setup-rápido)
+6. [Variáveis de ambiente](#variáveis-de-ambiente)
+7. [Scripts disponíveis](#scripts-disponíveis)
+8. [Guia da API](#guia-da-api)
+9. [Diagrama ERD](#diagrama-erd)
+10. [Autor](#autor)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Visão geral
 
-## Installation
+- Padrão arquitetural: Clean Architecture (camadas `domain`, `data`, `infra`, `presentation`, `main`)
+- Banco de dados relacional com TypeORM + migrations
+- Autenticação via JWT
+- Módulos de endpoint: `auth` (login), `dashboard`, `worker`, `project` e `family`
 
-```bash
-$ npm install
+## Tecnologias
+
+- Node.js 16+
+- TypeScript 3.9
+- Express 4
+- TypeORM 0.3
+- PostgreSQL
+- Yup (validação)
+- JWT (`jsonwebtoken`)
+- Docker / Docker Compose (opcional para banco)
+
+## Estrutura do projeto
+
+```text
+src/
+  config/         # Configurações de app, segurança e banco
+  data/           # Use cases, validações e erros
+  domain/         # Regras de domínio, contratos e modelos
+  infra/          # Implementações (TypeORM, entidades, repositórios, migrations)
+  loaders/        # Bootstrap da aplicação (dotenv, app, db, logger)
+  main/           # Factories
+  presentation/   # Controllers e middlewares HTTP
+  routes.ts       # Rotas da API
+  server.ts       # Entry point
 ```
 
-## Running the app
+## Pré-requisitos
+
+- Node.js `16.x` (recomendado)
+- npm `6+`
+- PostgreSQL `13+` (local ou via Docker)
+
+> Observação: o build com Webpack 4 pode falhar em Node 17+ (`ERR_OSSL_EVP_UNSUPPORTED`). Use Node 16 ou exporte `NODE_OPTIONS=--openssl-legacy-provider` antes de `npm run build`.
+
+## Setup rápido
+
+### 1) Clonar e instalar dependências
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone <url-do-repositorio>
+cd gept-backend
+npm install
 ```
 
-## Test
+### 2) Configurar ambiente
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Support
+### 3) Subir PostgreSQL com Docker (opcional)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Este `docker-compose.yml` sobe apenas o banco (`postgres-db`).
 
-## Stay in touch
+```bash
+docker-compose build
+docker-compose up -d
+```
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+**3. Start usando npm**
 
-## License
+- Necessário uma conexão com o PostgreSQL, configurar no .env do projeto antes de executar
 
-Nest is [MIT licensed](LICENSE).
+```bash
+npm install
+npm start
+```
+
+Aplicação estará disponível em <http://localhost:4000>.
+
+**4. Testes com Jest**
+
+```bash
+npm run test
+```
+
+## Contribuidores
+
+[Lucas Tavares](https://www.linkedin.com/in/lucas-tavares-a25323116/)

@@ -1,15 +1,17 @@
 FROM node:16
 
-WORKDIR /usr
+WORKDIR /app
 
 COPY . .
 
 RUN npm install
 
+ENV NODE_ENV=production
+
 RUN npm run build
 
 EXPOSE 4000
 
-CMD [ "node", "server.prod.js" ]
+CMD [ "node", "dist/server.js" ]
 
 
